@@ -4,8 +4,11 @@ import org.isf.generaldata.GeneralData;
 import org.isf.generaldata.MessageBundle;
 import org.isf.menu.gui.MainMenu;
 import org.isf.menu.manager.Context;
+import org.isf.patient.model.Patient;
 import org.isf.patpres.manager.PatPresManager;
+import org.isf.patpres.model.Bp;
 import org.isf.patpres.model.PatientPresentation;
+import org.isf.patpres.model.Vitals;
 import org.isf.utils.exception.OHServiceException;
 import org.isf.utils.exception.gui.OHServiceExceptionUtil;
 import org.isf.utils.jobjects.CustomJDateChooser;
@@ -143,17 +146,21 @@ public class PatPresBrowser extends ModalJFrame {
 			buttonNew.addActionListener(new ActionListener() {
 
 				public void actionPerformed(ActionEvent event) {
-					patientPresentation = new PatientPresentation();
-
-// TODO
-//					patientPresentation = new PatientPresentation(0, 0, new GregorianCalendar(), new Patient(),
-//						new Vaccine("", "", new VaccineType("", "")), 0);
-
-					PatientPresentation last = new PatientPresentation();
-					// TODO
-					//(0, 0, new GregorianCalendar(), new Patient(), new Vaccine("", "", new VaccineType("", "")), 0);
-					new PatPresEdit(myFrame, patientPresentation, true);
-
+					patientPresentation = new PatientPresentation(0, new Patient(), new Vitals() {{ setBp(new Bp());}},
+						null, null, null,
+						null, null,
+						null, null,
+						null, null, null,
+						null, null, null, null
+					);
+					PatientPresentation last = new PatientPresentation(0, new Patient(), new Vitals() {{ setBp(new Bp());}},
+						null, null, null,
+						null, null,
+						null, null,
+						null, null, null,
+						null, null, null, null
+					);
+					new PatPresEdit(myFrame, patientPresentation, true).setVisible(true);
 					if (!last.equals(patientPresentation)) {
 						lPatPres.add(0, patientPresentation);
 						((PatPresBrowser.PatPresBrowsingModel) jTable.getModel()).fireTableDataChanged();
@@ -188,21 +195,13 @@ public class PatPresBrowser extends ModalJFrame {
 					selectedrow = jTable.getSelectedRow();
 					patientPresentation = (PatientPresentation) (((PatPresBrowser.PatPresBrowsingModel) model).getValueAt(selectedrow, -1));
 
-					PatientPresentation last = new PatientPresentation();
-					last.setCode(patientPresentation.getCode());
-					last.setPatient(patientPresentation.getPatient());
-//					(patientPresentation.getCode(),
-//						patientPresentation.getProgr(),
-//						patientPresentation.getVaccineDate(),
-//						patientPresentation.getPatient(),
-//						patientPresentation.getVaccine(),
-//						patientPresentation.getLock(),
-//						patientPresentation.getPatName(),
-//						patientPresentation.getPatAge(),
-//						patientPresentation.getPatSex());
+					PatientPresentation last = new PatientPresentation(patientPresentation.getCode(), patientPresentation.getPatient(), patientPresentation.getVitals(),
+						patientPresentation.getPresentationDate(), patientPresentation.getConsultationEnd(), patientPresentation.getPresentationDate(),
+						patientPresentation.getReferredFrom(), patientPresentation.getPatientAilmentDescription(), patientPresentation.getDoctorsAilmentDescription(),
+						patientPresentation.getSpecificSymptoms(), patientPresentation.getDiagnosis(), patientPresentation.getPrognosis(), patientPresentation.getPatientAdvice(),
+						patientPresentation.getPrescribed(), patientPresentation.getFollowUp(), patientPresentation.getReferredTo(), patientPresentation.getSummary());
 
-					new PatPresEdit(myFrame, patientPresentation, false);
-
+					new PatPresEdit(myFrame, patientPresentation, false).setVisible(true);
 					if (!last.equals(patientPresentation)) {
 						((PatPresBrowser.PatPresBrowsingModel) jTable.getModel()).fireTableDataChanged();
 						updateRowCounter();

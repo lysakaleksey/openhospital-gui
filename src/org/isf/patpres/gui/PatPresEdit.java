@@ -1,17 +1,25 @@
 package org.isf.patpres.gui;
 
+import org.isf.bsunit.manager.BsUnitBrowserManager;
+import org.isf.bsunit.model.BsUnit;
 import org.isf.generaldata.GeneralData;
 import org.isf.generaldata.MessageBundle;
 import org.isf.menu.manager.Context;
 import org.isf.patient.manager.PatientBrowserManager;
 import org.isf.patient.model.Patient;
 import org.isf.patpres.manager.PatPresManager;
+import org.isf.patpres.model.Bp;
 import org.isf.patpres.model.PatientPresentation;
+import org.isf.patpres.model.Vitals;
+import org.isf.tempunit.manager.TempUnitBrowserManager;
+import org.isf.tempunit.model.TempUnit;
 import org.isf.utils.exception.OHServiceException;
 import org.isf.utils.exception.gui.OHServiceExceptionUtil;
 import org.isf.utils.jobjects.CustomJDateChooser;
+import org.isf.utils.jobjects.ModalJFrame;
 import org.isf.utils.jobjects.VoLimitedTextField;
 import org.isf.utils.time.RememberDates;
+import org.springframework.util.StringUtils;
 
 import javax.swing.*;
 import java.awt.*;
@@ -22,6 +30,10 @@ import java.awt.event.KeyListener;
 import java.util.ArrayList;
 import java.util.GregorianCalendar;
 import java.util.Locale;
+
+import static java.awt.ComponentOrientation.RIGHT_TO_LEFT;
+import static javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED;
+import static javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS;
 
 public class PatPresEdit extends JDialog {
 	private static final long serialVersionUID = -4271389493861772053L;
@@ -36,22 +48,31 @@ public class PatPresEdit extends JDialog {
 	private JPanel patientSearchPanel = null;
 	private JPanel buttonPanel = null;
 
-	private JLabel presentDateLabel = null;
-	private JLabel consultDateLabel = null;
-	private JLabel previousDateLabel = null;
-	private JLabel progrLabel = null;
-
 	private GregorianCalendar presentDateIn = null;
 	private CustomJDateChooser presentDateCal = null;
 	private CustomJDateChooser consultDateCal = null;
 	private CustomJDateChooser previousDateCal = null;
 
+	private JTextField referredFromField;
+	private JTextArea patientAilmentField;
+	private JTextArea doctorsAilmentField;
+	private JTextArea specificSymptomsField;
+	private JTextArea diagnosisField;
+	private JTextArea prognosisField;
+	private JTextArea patientAdviceField;
+	private JTextArea prescribedField;
+	private JTextArea followUpField;
+	private JTextField referredToField;
+	private JTextArea summaryField;
+	private JTextField vitalsWeightField;
+	private JTextField vitalsHeightField;
+	private JTextField vitalsBloodSugarField;
+	private JTextField vitalsTemperatureField;
+	private JTextField vitalsSystoleField;
+	private JTextField vitalsDiastoleField;
+	private JComboBox vitalsBsUnitField;
+	private JComboBox vitalsTempUnitField;
 
-	// patient
-	private JLabel patientLabel = null;
-	private JLabel nameLabel = null;
-	private JLabel ageLabel = null;
-	private JLabel sexLabel = null;
 	private VoLimitedTextField patTextField = null;
 	private VoLimitedTextField ageTextField = null;
 	private VoLimitedTextField sexTextField = null;
@@ -63,18 +84,16 @@ public class PatPresEdit extends JDialog {
 	private JButton cancelButton = null;
 	private JButton jSearchButton = null;
 
-	private VoLimitedTextField progrTextField = null;
-
+	private ArrayList<Patient> patients = null;
 	private Patient selectedPatient = null;
 	private String lastKey;
 	private String s;
-	private ArrayList<Patient> pat = null;
 
-	private static final Integer panelWidth = 600;
+	private static final Integer panelWidth = 800;
 	private static final Integer labelWidth = 50;
 	private static final Integer calendarWidth = 110;
 	private static final Integer dataPanelHeight = 300;
-	private static final Integer dataVitalsHeight = 200;
+	private static final Integer dataVitalsHeight = 150;
 	private static final Integer dataPatientHeight = 100;
 	private static final Integer buttonPanelHeight = 40;
 	private static final Integer deltaBetweenLabels = 40;
@@ -87,24 +106,23 @@ public class PatPresEdit extends JDialog {
 		initialize();
 	}
 
-	private int getPatientPresentationYMaxProg() {
-//		PatPresManager manager = Context.getApplicationContext().getBean(PatPresManager.class);
-//		try {
-//			return manager.getProgYear(0);
-//		} catch (OHServiceException e) {
-//			OHServiceExceptionUtil.showMessages(e);
-//			return 0;
-//		}
-		return 0;
-	}
-
 	/**
 	 * This method initializes this Frame, sets the correct Dimensions
 	 */
 	private void initialize() {
-		this.setBounds(30, 100, panelWidth, dataPanelHeight + dataPatientHeight + dataVitalsHeight + buttonPanelHeight + 30);
-		this.setContentPane(getJContentPane());
-		this.setResizable(false);
+		Toolkit kit = Toolkit.getDefaultToolkit();
+		Dimension screensize = kit.getScreenSize();
+		final int pfrmBase = 20;
+		final int pfrmWidth = 17;
+		final int pfrmHeight = 12;
+		this.setBounds((screensize.width - (int)(screensize.width * 0.75)) / 2, 0,
+			screensize.width * pfrmWidth / pfrmBase + 50, screensize.height);
+
+		JScrollPane scrollPane = new JScrollPane();
+		this.getContentPane().setLayout(new BorderLayout(0, 0));
+		this.getContentPane().add(scrollPane, BorderLayout.CENTER);
+		scrollPane.setViewportView(getJContentPane());
+		this.setResizable(true);
 		if (insert) {
 			this.setTitle(MessageBundle.getMessage("angal.patvac.newpatientvaccine") + "(" + VERSION + ")");
 		} else {
@@ -112,7 +130,6 @@ public class PatPresEdit extends JDialog {
 		}
 		this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		this.setLocationRelativeTo(null);
-		this.setVisible(true);
 	}
 
 	/**
@@ -123,14 +140,16 @@ public class PatPresEdit extends JDialog {
 	private JPanel getJContentPane() {
 		if (contentPanel == null) {
 			contentPanel = new JPanel();
-			contentPanel.setLayout(null);
-			contentPanel.add(getMainDataPanel());
-			contentPanel.add(getVitalsDataPanel());
-			contentPanel.add(getPatientDataPanel());
-			contentPanel.add(getButtonPanel());
+			contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
+			contentPanel.add(getPatientSearchPanel(), null);
+			contentPanel.add(getPatientDataPanel(), null);
+			contentPanel.add(getMainDataPanel(), null);
+			contentPanel.add(getVitalsDataPanel(), null);
+			contentPanel.add(getButtonPanel(), null);
 		}
 		return contentPanel;
 	}
+
 
 	/**
 	 * This method initializes dataPanel. This panel contains all items (combo
@@ -142,77 +161,153 @@ public class PatPresEdit extends JDialog {
 		if (mainDataPanel == null) {
 			// initialize data panel
 			mainDataPanel = new JPanel();
-			mainDataPanel.setLayout(null);
-			mainDataPanel.setBounds(0, 0, panelWidth, dataPanelHeight);
+			mainDataPanel.setLayout(new BoxLayout(mainDataPanel, BoxLayout.Y_AXIS));
+			mainDataPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.GRAY), MessageBundle.getMessage("angal.patpres.presentationdata")));
 
-			// presentation date
-			int next_x = 5;
-			int next_y = 10;
-			presentDateLabel = new JLabel(MessageBundle.getMessage("angal.patpres.presentationdate"));
-			presentDateLabel.setBounds(next_x, next_y, 200, 20);
-			next_x += 200;
-			presentDateCal = getPresentationDateFieldCal();
-			presentDateCal.setLocale(new Locale(GeneralData.LANGUAGE));
-			presentDateCal.setDateFormatString("dd/MM/yy");
-			presentDateCal.setBounds(next_x, next_y, calendarWidth, 20);
+			// Presentation dates
+			mainDataPanel.add(getMainDatesPanel(), null);
 
-			// consultation end date
-			next_x = 5;
-			next_y += 30;
-			consultDateLabel = new JLabel(MessageBundle.getMessage("angal.patpres.consultenddate"));
-			consultDateLabel.setBounds(next_x, next_y, 200, 20);
-			next_x += 200;
-			consultDateCal = getConsultationEndDateFieldCal();
-			consultDateCal.setLocale(new Locale(GeneralData.LANGUAGE));
-			consultDateCal.setDateFormatString("dd/MM/yy");
-			consultDateCal.setBounds(next_x, next_y, calendarWidth, 20);
+			// Referred From
+			JLabel referredFromLabel = new JLabel(MessageBundle.getMessage("angal.patpres.referredfrom"));
+			referredFromField = new JTextField(100);
+			referredFromField.setMaximumSize(referredFromField.getPreferredSize());
+			referredFromField.setText(patPres.getReferredFrom());
+			mainDataPanel.add(referredFromLabel, null);
+			mainDataPanel.add(referredFromField, null);
 
-			// previous consult date
-			next_x = 5;
-			next_y += 30;
-			previousDateLabel = new JLabel(MessageBundle.getMessage("angal.patpres.previousconsdate"));
-			previousDateLabel.setBounds(next_x, next_y, 200, 20);
-			next_x += 200;
-			previousDateCal = getPreviousDateCalFieldCal();
-			previousDateCal.setLocale(new Locale(GeneralData.LANGUAGE));
-			previousDateCal.setDateFormatString("dd/MM/yy");
-			previousDateCal.setBounds(next_x, next_y, calendarWidth, 20);
+			// Referred to
+			JLabel referredToLabel = new JLabel(MessageBundle.getMessage("angal.patpres.referredto"));
+			referredToField = new JTextField(100);
+			referredToField.setMaximumSize(referredToField.getPreferredSize());
+			referredToField.setText(patPres.getReferredTo());
+			mainDataPanel.add(referredToLabel, null);
+			mainDataPanel.add(referredToField, null);
 
+			// Patient ailment
+			JLabel patientAilmentLabel = new JLabel(MessageBundle.getMessage("angal.patpres.patientailment"));
+			patientAilmentField = new JTextArea();
+			patientAilmentField.setRows(5);
+			patientAilmentField.setText(patPres.getPatientAilmentDescription());
+			mainDataPanel.add(patientAilmentLabel, null);
+			mainDataPanel.add(new JScrollPane(patientAilmentField), null);
 
+			// Doctors ailment
+			JLabel doctorsAilmentLabel = new JLabel(MessageBundle.getMessage("angal.patpres.doctorsailment"));
+			doctorsAilmentField = new JTextArea();
+			doctorsAilmentField.setRows(5);
+			doctorsAilmentField.setText(patPres.getDoctorsAilmentDescription());
+			mainDataPanel.add(doctorsAilmentLabel, null);
+			mainDataPanel.add(new JScrollPane(doctorsAilmentField), null);
 
-			// add all to the data panel
-			mainDataPanel.add(presentDateLabel, null);
-			mainDataPanel.add(presentDateCal, null);
-			mainDataPanel.add(consultDateLabel, null);
-			mainDataPanel.add(consultDateCal, null);
-			mainDataPanel.add(previousDateLabel, null);
-			mainDataPanel.add(previousDateCal, null);
-			mainDataPanel.add(getPatientSearchPanel(), null);
+			// Specific symptoms
+			JLabel symptomsLabel = new JLabel(MessageBundle.getMessage("angal.patpres.symptoms"));
+			specificSymptomsField = new JTextArea();
+			specificSymptomsField.setRows(5);
+			specificSymptomsField.setText(patPres.getSpecificSymptoms());
+			mainDataPanel.add(symptomsLabel, null);
+			mainDataPanel.add(new JScrollPane(specificSymptomsField), null);
+
+			// Diagnosis
+			JLabel diagnosisLabel = new JLabel(MessageBundle.getMessage("angal.patpres.diagnosis"));
+			diagnosisField = new JTextArea();
+			diagnosisField.setRows(5);
+			diagnosisField.setText(patPres.getDiagnosis());
+			mainDataPanel.add(diagnosisLabel, null);
+			mainDataPanel.add(new JScrollPane(diagnosisField), null);
+
+			// Prognosis
+			JLabel prognosisLabel = new JLabel(MessageBundle.getMessage("angal.patpres.prognosis"));
+			prognosisField = new JTextArea();
+			prognosisField.setRows(5);
+			prognosisField.setText(patPres.getPrognosis());
+			mainDataPanel.add(prognosisLabel, null);
+			mainDataPanel.add(new JScrollPane(prognosisField), null);
+
+			// Patient advice
+			JLabel patientAdviceLabel = new JLabel(MessageBundle.getMessage("angal.patpres.patientadvice"));
+			patientAdviceField = new JTextArea();
+			patientAdviceField.setRows(5);
+			patientAdviceField.setText(patPres.getPatientAdvice());
+			mainDataPanel.add(patientAdviceLabel, null);
+			mainDataPanel.add(new JScrollPane(patientAdviceField), null);
+
+			// Prescribed
+			JLabel prescribedAdviceLabel = new JLabel(MessageBundle.getMessage("angal.patpres.prescribed"));
+			prescribedField = new JTextArea();
+			prescribedField.setRows(5);
+			prescribedField.setText(patPres.getPrescribed());
+			mainDataPanel.add(prescribedAdviceLabel, null);
+			mainDataPanel.add(new JScrollPane(prescribedField), null);
+
+			// Follow Up
+			JLabel followupLabel = new JLabel(MessageBundle.getMessage("angal.patpres.followup"));
+			followUpField = new JTextArea();
+			followUpField.setRows(5);
+			followUpField.setText(patPres.getFollowUp());
+			mainDataPanel.add(followupLabel, null);
+			mainDataPanel.add(new JScrollPane(followUpField), null);
+
+			// Summary
+			JLabel summaryLabel = new JLabel(MessageBundle.getMessage("angal.patpres.summary"));
+			summaryField = new JTextArea();
+			summaryField.setRows(3);
+			summaryField.setText(patPres.getSummary());
+			mainDataPanel.add(summaryLabel, null);
+			mainDataPanel.add(new JScrollPane(summaryField), null);
 		}
+
 		return mainDataPanel;
 	}
+
+	private JPanel getMainDatesPanel() {
+		JPanel jPanel = new JPanel();
+		jPanel.setLayout(new FlowLayout());
+
+		// presentation date
+		JLabel presentDateLabel = new JLabel(MessageBundle.getMessage("angal.patpres.presentationdate"));
+		presentDateCal = getPresentationDateFieldCal();
+		presentDateCal.setLocale(new Locale(GeneralData.LANGUAGE));
+		presentDateCal.setDateFormatString("dd/MM/yy");
+		jPanel.add(presentDateLabel, null);
+		jPanel.add(presentDateCal, null);
+
+		// consultation end date
+		JLabel consultDateLabel = new JLabel(MessageBundle.getMessage("angal.patpres.consultenddate"));
+		consultDateCal = getConsultationEndDateFieldCal();
+		consultDateCal.setLocale(new Locale(GeneralData.LANGUAGE));
+		consultDateCal.setDateFormatString("dd/MM/yy");
+		jPanel.add(consultDateLabel, null);
+		jPanel.add(consultDateCal, null);
+
+		// previous consult date
+		JLabel previousDateLabel = new JLabel(MessageBundle.getMessage("angal.patpres.previousconsdate"));
+		previousDateCal = getPreviousDateCalFieldCal();
+		previousDateCal.setLocale(new Locale(GeneralData.LANGUAGE));
+		previousDateCal.setDateFormatString("dd/MM/yy");
+		jPanel.add(previousDateLabel, null);
+		jPanel.add(previousDateCal, null);
+
+		return jPanel;
+	}
+
 
 	/**
 	 * This method initializes getPatientSearchPanel
 	 *
 	 * @return JPanel
 	 */
-
 	private JPanel getPatientSearchPanel() {
 		if (patientSearchPanel == null) {
 			patientSearchPanel = new JPanel();
-			patientSearchPanel.setLayout(null);
-			patientSearchPanel.setBounds(0, 0, 600, 100);
+			patientSearchPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
+			patientSearchPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.GRAY), MessageBundle.getMessage("angal.patpres.searchpatient")));
 
 			// patient code label
-			int next_x = 330;
-			int next_y = 10;
-			patientLabel = new JLabel(MessageBundle.getMessage("angal.patvac.patientcode"));
-			patientLabel.setBounds(next_x, next_y, 150, 20);
-			next_y += 30;
+			JLabel patientLabel = new JLabel(MessageBundle.getMessage("angal.patpres.patientcode"));
+			patientSearchPanel.add(patientLabel, null);
+
 			// patient code box
-			patientSourceField = new JTextField();
-			patientSourceField.setBounds(next_x, next_y, 50, 20);
+			patientSourceField = new JTextField(5);
 			if (GeneralData.ENHANCEDSEARCH) {
 				patientSourceField.addKeyListener(new KeyListener() {
 					public void keyPressed(KeyEvent e) {
@@ -221,8 +316,10 @@ public class PatPresEdit extends JDialog {
 							jSearchButton.doClick();
 						}
 					}
+
 					public void keyReleased(KeyEvent e) {
 					}
+
 					public void keyTyped(KeyEvent e) {
 					}
 				});
@@ -238,29 +335,43 @@ public class PatPresEdit extends JDialog {
 						s = s.trim();
 						filterPatient(s);
 					}
+
 					public void keyPressed(KeyEvent e) {
 					}
+
 					public void keyReleased(KeyEvent e) {
 					}
 				});
 			}
-			patientSearchPanel.add(patientLabel, null);
 			patientSearchPanel.add(patientSourceField, null);
 
-			// patient data
-			next_y += 30;
+			// patient combo box
 			patientComboBox = new JComboBox();
-			patientComboBox.setBounds(next_x, next_y, 250, 20);
-			patientComboBox.addItem(MessageBundle.getMessage("angal.patvac.selectapatient"));
+			patientComboBox.setMinimumSize(new Dimension(200, 20));
+			patientComboBox.setMinimumSize(new Dimension(patientComboBox.getMaximumSize().width, patientComboBox.getMaximumSize().height));
+			patientComboBox.setMaximumSize(new Dimension(patientComboBox.getMaximumSize().width, patientComboBox.getMaximumSize().height));
+			patientComboBox.addItem(MessageBundle.getMessage("angal.patpres.searchpatient"));
 
 			if (GeneralData.ENHANCEDSEARCH) {
-				next_x += patientSourceField.getBounds().getWidth() + 5;
-				next_y -= 30;
-				patientSearchPanel.add(getJSearchButton(next_x, next_y), null);
+				if (jSearchButton == null) {
+					jSearchButton = new JButton();
+					jSearchButton.setIcon(new ImageIcon("rsc/icons/zoom_r_button.png"));
+					jSearchButton.setPreferredSize(new Dimension(20, 20));
+					if (!insert) {
+						jSearchButton.setEnabled(false);
+					}
+					jSearchButton.addActionListener(new ActionListener() {
+						public void actionPerformed(ActionEvent e) {
+							patientComboBox.removeAllItems();
+							resetPatPresPat();
+							getPatientComboBox(patientSourceField.getText());
+						}
+					});
+				}
+				patientSearchPanel.add(jSearchButton, null);
 				s = (insert ? "-" : patPres.getPatient().getName());
 			}
-			patientComboBox = getPatientComboBox(s);
-
+			getPatientComboBox(s);
 			if (!insert) {
 				patientComboBox.setEnabled(false);
 				patientSourceField.setEnabled(false);
@@ -269,31 +380,6 @@ public class PatPresEdit extends JDialog {
 			patientSearchPanel.add(patientComboBox, null);
 		}
 		return patientSearchPanel;
-	}
-
-	/**
-	 * This method initializes getJSearchButton
-	 *
-	 * @return JButton
-	 */
-	private JButton getJSearchButton(int next_x, int next_y) {
-		if (jSearchButton == null) {
-			jSearchButton = new JButton();
-			jSearchButton.setIcon(new ImageIcon("rsc/icons/zoom_r_button.png"));
-			jSearchButton.setPreferredSize(new Dimension(20, 20));
-			jSearchButton.setBounds(next_x, next_y, 20, 20);
-			if (!insert) {
-				jSearchButton.setEnabled(false);
-			}
-			jSearchButton.addActionListener(new ActionListener() {
-				public void actionPerformed(ActionEvent e) {
-					patientComboBox.removeAllItems();
-					resetPatVacPat();
-					getPatientComboBox(patientSourceField.getText());
-				}
-			});
-		}
-		return jSearchButton;
 	}
 
 	/**
@@ -351,10 +437,10 @@ public class PatPresEdit extends JDialog {
 
 		if (key == null || key.compareTo("") == 0) {
 			patientComboBox.addItem(MessageBundle.getMessage("angal.patvac.selectapatient"));
-			resetPatVacPat();
+			resetPatPresPat();
 		}
 
-		for (Patient elem : pat) {
+		for (Patient elem : patients) {
 			if (key != null) {
 				// Search key extended to name and code
 				StringBuilder sbName = new StringBuilder();
@@ -391,7 +477,7 @@ public class PatPresEdit extends JDialog {
 	 *
 	 * @return void
 	 */
-	private void resetPatVacPat() {
+	private void resetPatPresPat() {
 		patTextField.setText("");
 		ageTextField.setText("");
 		sexTextField.setText("");
@@ -422,20 +508,20 @@ public class PatPresEdit extends JDialog {
 
 		if (GeneralData.ENHANCEDSEARCH) {
 			try {
-				pat = patBrowser.getPatientWithHeightAndWeight(regExp);
+				patients = patBrowser.getPatientWithHeightAndWeight(regExp);
 			} catch (OHServiceException ex) {
 				OHServiceExceptionUtil.showMessages(ex);
-				pat = new ArrayList<Patient>();
+				patients = new ArrayList<Patient>();
 			}
 		} else {
 			try {
-				pat = patBrowser.getPatient();
+				patients = patBrowser.getPatient();
 			} catch (OHServiceException e) {
 				OHServiceExceptionUtil.showMessages(e);
 			}
 		}
-		if (pat != null) {
-			for (Patient elem : pat) {
+		if (patients != null) {
+			for (Patient elem : patients) {
 				if (!insert) {
 					if (elem.getCode().equals(patPres.getPatient().getCode())) {
 						patSelected = elem;
@@ -477,11 +563,85 @@ public class PatPresEdit extends JDialog {
 	 */
 	private JPanel getVitalsDataPanel() {
 		if (vitalsDataPanel == null) {
+			GridLayout layout = new GridLayout(2, 8);
+
 			vitalsDataPanel = new JPanel();
-			vitalsDataPanel.setLayout(null);
-			vitalsDataPanel.setBounds(0, dataPanelHeight, panelWidth, dataVitalsHeight);
+			vitalsDataPanel.setLayout(layout);
 			vitalsDataPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.GRAY), MessageBundle.getMessage("angal.patpres.datavitals")));
 
+			JLabel weightLabel = new JLabel(MessageBundle.getMessage("angal.patpres.vitals.weight"));
+			vitalsWeightField = new JTextField();
+			vitalsDataPanel.add(weightLabel, null);
+			vitalsDataPanel.add(vitalsWeightField, null);
+			if (patPres.getVitals() != null && patPres.getVitals().getWeight() != null)
+				vitalsWeightField.setText(String.valueOf(patPres.getVitals().getWeight()));
+
+			JLabel heightLabel = new JLabel(MessageBundle.getMessage("angal.patpres.vitals.height"));
+			vitalsHeightField = new JTextField();
+			vitalsDataPanel.add(heightLabel, null);
+			vitalsDataPanel.add(vitalsHeightField, null);
+			if (patPres.getVitals() != null && patPres.getVitals().getHeight() != null)
+				vitalsHeightField.setText(String.valueOf(patPres.getVitals().getHeight()));
+
+			JLabel bloodSugarLabel = new JLabel(MessageBundle.getMessage("angal.patpres.vitals.bloodsugar"));
+			vitalsBloodSugarField = new JTextField();
+			vitalsDataPanel.add(bloodSugarLabel, null);
+			vitalsDataPanel.add(vitalsBloodSugarField, null);
+			if (patPres.getVitals() != null && patPres.getVitals().getBloodSugar() != null)
+				vitalsBloodSugarField.setText(String.valueOf(patPres.getVitals().getBloodSugar()));
+
+			JLabel temperatureLabel = new JLabel(MessageBundle.getMessage("angal.patpres.vitals.temperature"));
+			vitalsTemperatureField = new JTextField();
+			vitalsDataPanel.add(temperatureLabel, null);
+			vitalsDataPanel.add(vitalsTemperatureField, null);
+			if (patPres.getVitals() != null && patPres.getVitals().getTemperature() != null)
+				vitalsTemperatureField.setText(String.valueOf(patPres.getVitals().getTemperature()));
+
+			JLabel bsUnitLabel = new JLabel(MessageBundle.getMessage("angal.bsunit.name"));
+			vitalsBsUnitField = new JComboBox();
+			vitalsBsUnitField.addItem(MessageBundle.getMessage("angal.patpres.vitals.selectunit"));
+			BsUnitBrowserManager bsUnitManager = Context.getApplicationContext().getBean(BsUnitBrowserManager.class);
+			try {
+				for (BsUnit unit : bsUnitManager.getBsUnit()) {
+					vitalsBsUnitField.addItem(unit.getCode());
+				}
+			} catch (OHServiceException ex) {
+				OHServiceExceptionUtil.showMessages(ex);
+			}
+			vitalsDataPanel.add(bsUnitLabel, null);
+			vitalsDataPanel.add(vitalsBsUnitField, null);
+			if (patPres.getVitals() != null && StringUtils.hasText(patPres.getVitals().getBsUnit()))
+				vitalsBsUnitField.setSelectedItem(patPres.getVitals().getBsUnit());
+
+			JLabel tempUnitLabel = new JLabel(MessageBundle.getMessage("angal.tempunit.name"));
+			vitalsTempUnitField = new JComboBox();
+			TempUnitBrowserManager tempUnitManager = Context.getApplicationContext().getBean(TempUnitBrowserManager.class);
+			vitalsTempUnitField.addItem(MessageBundle.getMessage("angal.patpres.vitals.selectunit"));
+			try {
+				for (TempUnit unit : tempUnitManager.getTempUnit()) {
+					vitalsTempUnitField.addItem(unit.getCode());
+				}
+			} catch (OHServiceException ex) {
+				OHServiceExceptionUtil.showMessages(ex);
+			}
+			vitalsDataPanel.add(tempUnitLabel, null);
+			vitalsDataPanel.add(vitalsTempUnitField, null);
+			if (patPres.getVitals() != null && StringUtils.hasText(patPres.getVitals().getTempUnit()))
+				vitalsTempUnitField.setSelectedItem(patPres.getVitals().getTempUnit());
+
+			JLabel systoleLabel = new JLabel(MessageBundle.getMessage("angal.patpres.vitals.systole"));
+			vitalsSystoleField = new JTextField();
+			vitalsDataPanel.add(systoleLabel, null);
+			vitalsDataPanel.add(vitalsSystoleField, null);
+			if (patPres.getVitals() != null && patPres.getVitals().getBp() != null && patPres.getVitals().getBp().getSystole() != null)
+				vitalsSystoleField.setText(String.valueOf(patPres.getVitals().getBp().getSystole()));
+
+			JLabel diastoleLabel = new JLabel(MessageBundle.getMessage("angal.patpres.vitals.diastole"));
+			vitalsDiastoleField = new JTextField();
+			vitalsDataPanel.add(diastoleLabel, null);
+			vitalsDataPanel.add(vitalsDiastoleField, null);
+			if (patPres.getVitals() != null && patPres.getVitals().getBp() != null && patPres.getVitals().getBp().getDiastole() != null)
+				vitalsDiastoleField.setText(String.valueOf(patPres.getVitals().getBp().getDiastole()));
 		}
 		return vitalsDataPanel;
 	}
@@ -494,32 +654,32 @@ public class PatPresEdit extends JDialog {
 	private JPanel getPatientDataPanel() {
 		if (patientDataPanel == null) {
 			patientDataPanel = new JPanel();
-			patientDataPanel.setLayout(null);
-			patientDataPanel.setBounds(0, dataPanelHeight + dataVitalsHeight, panelWidth, dataPatientHeight);
+			patientDataPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
 			patientDataPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.GRAY), MessageBundle.getMessage("angal.patvac.datapatient")));
-			nameLabel = new JLabel(MessageBundle.getMessage("angal.patvac.name"));
-			nameLabel.setBounds(10, deltaBetweenLabels, labelWidth, 20);
-			patTextField = getPatientTextField();
-			patTextField.setBounds(labelWidth + 5, deltaBetweenLabels, 180, 20);
-			ageLabel = new JLabel(MessageBundle.getMessage("angal.patvac.age"));
-			ageLabel.setBounds(255, deltaBetweenLabels, 35, 20);
-			ageTextField = getAgeTextField();
-			ageTextField.setBounds(295, deltaBetweenLabels, 50, 20);
-			sexLabel = new JLabel(MessageBundle.getMessage("angal.patvac.sex"));
-			sexLabel.setBounds(370, deltaBetweenLabels, 80, 20);
-			sexTextField = getSexTextField();
-			sexTextField.setBounds(440, deltaBetweenLabels, 50, 20);
 
-			// add all elements
+			JLabel nameLabel = new JLabel(MessageBundle.getMessage("angal.patvac.name"));
 			patientDataPanel.add(nameLabel, null);
-			patientDataPanel.add(patTextField, null);
-			patientDataPanel.add(ageLabel, null);
-			patientDataPanel.add(ageTextField, null);
-			patientDataPanel.add(sexLabel, null);
-			patientDataPanel.add(sexTextField, null);
+
+			patTextField = getPatientTextField();
 			patTextField.setEditable(false);
+			patTextField.setColumns(30);
+			patientDataPanel.add(patTextField, null);
+
+			JLabel ageLabel = new JLabel(MessageBundle.getMessage("angal.patvac.age"));
+			patientDataPanel.add(ageLabel, null);
+
+			ageTextField = getAgeTextField();
 			ageTextField.setEditable(false);
+			ageTextField.setColumns(3);
+			patientDataPanel.add(ageTextField, null);
+
+			JLabel sexLabel = new JLabel(MessageBundle.getMessage("angal.patvac.sex"));
+			patientDataPanel.add(sexLabel, null);
+
+			sexTextField = getSexTextField();
 			sexTextField.setEditable(false);
+			sexTextField.setColumns(3);
+			patientDataPanel.add(sexTextField, null);
 		}
 		return patientDataPanel;
 	}
@@ -604,29 +764,76 @@ public class PatPresEdit extends JDialog {
 			okButton.setMnemonic(KeyEvent.VK_O);
 			okButton.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
-
-					GregorianCalendar gregDate = new GregorianCalendar();
-					gregDate.setTime(presentDateCal.getDate());
-					//patPres.setProgr(Integer.parseInt(progrTextField.getText()));
-
 					// check on patient
 					if (selectedPatient == null) {
-						JOptionPane.showMessageDialog(null, MessageBundle.getMessage("angal.patvac.pleaseselectapatient"));
+						JOptionPane.showMessageDialog(null, MessageBundle.getMessage("angal.patpres.pleaseselectpatient"));
+						return;
+					} else if (presentDateCal.getDate() == null) {
+						JOptionPane.showMessageDialog(null, MessageBundle.getMessage("angal.patpres.pleaseinsertpresentationdate"));
+						return;
+					} else if (StringUtils.isEmpty(summaryField.getText())) {
+						JOptionPane.showMessageDialog(null, MessageBundle.getMessage("angal.patpres.pleaseselectsummary"));
 						return;
 					}
 
-					//patPres.setVaccineDate(gregDate);
-					//patPres.setVaccine((Vaccine) vaccineComboBox.getSelectedItem());
 					patPres.setPatient(selectedPatient);
-					//patPres.setLock(0);
-					//patPres.setPatName(selectedPatient.getName());
-					//patPres.setPatSex(selectedPatient.getSex());
+					if (presentDateCal.getDate() != null) {
+						GregorianCalendar gregDate = new GregorianCalendar();
+						gregDate.setTime(presentDateCal.getDate());
+						patPres.setPresentationDate(gregDate);
+					}
+					if (consultDateCal.getDate() != null) {
+						GregorianCalendar gregDate = new GregorianCalendar();
+						gregDate.setTime(consultDateCal.getDate());
+						patPres.setConsultationEnd(gregDate);
+					}
+					if (previousDateCal.getDate() != null) {
+						GregorianCalendar gregDate = new GregorianCalendar();
+						gregDate.setTime(previousDateCal.getDate());
+						patPres.setPreviousConsult(gregDate);
+					}
+					// Vitals
+					if (StringUtils.hasText(vitalsHeightField.getText())) {
+						patPres.getVitals().setHeight(Float.parseFloat(vitalsHeightField.getText()));
+					}
+					if (StringUtils.hasText(vitalsWeightField.getText())) {
+						patPres.getVitals().setWeight(Float.parseFloat(vitalsWeightField.getText()));
+					}
+					if (StringUtils.hasText(vitalsBloodSugarField.getText())) {
+						patPres.getVitals().setBloodSugar(Float.parseFloat(vitalsBloodSugarField.getText()));
+					}
+					if (StringUtils.hasText(vitalsTemperatureField.getText())) {
+						patPres.getVitals().setTemperature(Float.parseFloat(vitalsTemperatureField.getText()));
+					}
+					if (vitalsBsUnitField.getSelectedIndex() > 0) {
+						patPres.getVitals().setBsUnit((String)vitalsBsUnitField.getSelectedItem());
+					}
+					if (vitalsTempUnitField.getSelectedIndex() > 0) {
+						patPres.getVitals().setTempUnit((String)vitalsTempUnitField.getSelectedItem());
+					}
+					if (StringUtils.hasText(vitalsSystoleField.getText())) {
+						patPres.getVitals().getBp().setSystole(Integer.parseInt(vitalsSystoleField.getText()));
+					}
+					if (StringUtils.hasText(vitalsDiastoleField.getText())) {
+						patPres.getVitals().getBp().setDiastole(Integer.parseInt(vitalsDiastoleField.getText()));
+					}
+					// Remaining fields
+					patPres.setReferredTo(referredFromField.getText());
+					patPres.setReferredTo(referredToField.getText());
+					patPres.setPatientAilmentDescription(patientAilmentField.getText());
+					patPres.setDoctorsAilmentDescription(doctorsAilmentField.getText());
+					patPres.setSpecificSymptoms(specificSymptomsField.getText());
+					patPres.setDiagnosis(diagnosisField.getText());
+					patPres.setPrognosis(prognosisField.getText());
+					patPres.setPatientAdvice(patientAdviceField.getText());
+					patPres.setPrescribed(prescribedField.getText());
+					patPres.setFollowUp(followUpField.getText());
+					patPres.setSummary(summaryField.getText());
 
 					boolean result;
 					PatPresManager manager = Context.getApplicationContext().getBean(PatPresManager.class);
 					// handling db insert/update
 					if (insert) {
-						//patPres.setPatAge(selectedPatient.getAge());
 						try {
 							result = manager.newPatientPresentation(patPres);
 						} catch (OHServiceException e1) {
@@ -643,11 +850,15 @@ public class PatPresEdit extends JDialog {
 					}
 
 					if (!result)
-						JOptionPane.showMessageDialog(null, MessageBundle.getMessage("angal.patvac.thedatacouldnobesaved"));
+						JOptionPane.showMessageDialog(null, MessageBundle.getMessage("angal.patpres.thedatacouldnobesaved"));
 					else {
-						patPres = new PatientPresentation();//(0, 0, new GregorianCalendar(), new Patient(), new Vaccine("", "", new VaccineType("", "")), 0);
-						patPres.setPatient(new Patient());
-						patPres.setPatient(new Patient());
+						patPres = new PatientPresentation(0, new Patient(), new Vitals(){{ setBp(new Bp());}},
+							new GregorianCalendar(), null, null,
+							null, null,
+							null, null,
+							null, null, null,
+							null, null, null, null
+						);
 						dispose();
 					}
 				}
