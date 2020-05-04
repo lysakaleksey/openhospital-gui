@@ -16,7 +16,6 @@ import org.isf.tempunit.model.TempUnit;
 import org.isf.utils.exception.OHServiceException;
 import org.isf.utils.exception.gui.OHServiceExceptionUtil;
 import org.isf.utils.jobjects.CustomJDateChooser;
-import org.isf.utils.jobjects.ModalJFrame;
 import org.isf.utils.jobjects.VoLimitedTextField;
 import org.isf.utils.time.RememberDates;
 import org.springframework.util.StringUtils;
@@ -30,10 +29,6 @@ import java.awt.event.KeyListener;
 import java.util.ArrayList;
 import java.util.GregorianCalendar;
 import java.util.Locale;
-
-import static java.awt.ComponentOrientation.RIGHT_TO_LEFT;
-import static javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED;
-import static javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS;
 
 public class PatPresEdit extends JDialog {
 	private static final long serialVersionUID = -4271389493861772053L;
@@ -115,7 +110,7 @@ public class PatPresEdit extends JDialog {
 		final int pfrmBase = 20;
 		final int pfrmWidth = 17;
 		final int pfrmHeight = 12;
-		this.setBounds((screensize.width - (int)(screensize.width * 0.75)) / 2, 0,
+		this.setBounds((screensize.width - (int) (screensize.width * 0.75)) / 2, 0,
 			screensize.width * pfrmWidth / pfrmBase + 50, screensize.height);
 
 		JScrollPane scrollPane = new JScrollPane();
@@ -124,9 +119,9 @@ public class PatPresEdit extends JDialog {
 		scrollPane.setViewportView(getJContentPane());
 		this.setResizable(true);
 		if (insert) {
-			this.setTitle(MessageBundle.getMessage("angal.patvac.newpatientvaccine") + "(" + VERSION + ")");
+			this.setTitle(MessageBundle.getMessage("angal.patpres.newpatientpresentation") + "(" + VERSION + ")");
 		} else {
-			this.setTitle(MessageBundle.getMessage("angal.patvac.edipatientvaccine") + "(" + VERSION + ")");
+			this.setTitle(MessageBundle.getMessage("angal.patpres.editpatientpresentation") + "(" + VERSION + ")");
 		}
 		this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		this.setLocationRelativeTo(null);
@@ -299,7 +294,7 @@ public class PatPresEdit extends JDialog {
 	private JPanel getPatientSearchPanel() {
 		if (patientSearchPanel == null) {
 			patientSearchPanel = new JPanel();
-			patientSearchPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
+			patientSearchPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
 			patientSearchPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.GRAY), MessageBundle.getMessage("angal.patpres.searchpatient")));
 
 			// patient code label
@@ -654,7 +649,7 @@ public class PatPresEdit extends JDialog {
 	private JPanel getPatientDataPanel() {
 		if (patientDataPanel == null) {
 			patientDataPanel = new JPanel();
-			patientDataPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
+			patientDataPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
 			patientDataPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.GRAY), MessageBundle.getMessage("angal.patvac.datapatient")));
 
 			JLabel nameLabel = new JLabel(MessageBundle.getMessage("angal.patvac.name"));
@@ -781,44 +776,73 @@ public class PatPresEdit extends JDialog {
 						GregorianCalendar gregDate = new GregorianCalendar();
 						gregDate.setTime(presentDateCal.getDate());
 						patPres.setPresentationDate(gregDate);
+					} else {
+						patPres.setPresentationDate(null);
 					}
 					if (consultDateCal.getDate() != null) {
 						GregorianCalendar gregDate = new GregorianCalendar();
 						gregDate.setTime(consultDateCal.getDate());
 						patPres.setConsultationEnd(gregDate);
+					} else {
+						patPres.setConsultationEnd(null);
 					}
 					if (previousDateCal.getDate() != null) {
 						GregorianCalendar gregDate = new GregorianCalendar();
 						gregDate.setTime(previousDateCal.getDate());
 						patPres.setPreviousConsult(gregDate);
+					} else {
+						patPres.setPreviousConsult(null);
 					}
 					// Vitals
+					if (patPres.getVitals() == null) {
+						patPres.setVitals(new Vitals());
+					}
 					if (StringUtils.hasText(vitalsHeightField.getText())) {
 						patPres.getVitals().setHeight(Float.parseFloat(vitalsHeightField.getText()));
+					} else {
+						patPres.getVitals().setHeight(null);
 					}
 					if (StringUtils.hasText(vitalsWeightField.getText())) {
 						patPres.getVitals().setWeight(Float.parseFloat(vitalsWeightField.getText()));
+					} else {
+						patPres.getVitals().setWeight(null);
 					}
 					if (StringUtils.hasText(vitalsBloodSugarField.getText())) {
 						patPres.getVitals().setBloodSugar(Float.parseFloat(vitalsBloodSugarField.getText()));
+					} else {
+						patPres.getVitals().setBloodSugar(null);
 					}
 					if (StringUtils.hasText(vitalsTemperatureField.getText())) {
 						patPres.getVitals().setTemperature(Float.parseFloat(vitalsTemperatureField.getText()));
+					} else {
+						patPres.getVitals().setTemperature(null);
 					}
 					if (vitalsBsUnitField.getSelectedIndex() > 0) {
-						patPres.getVitals().setBsUnit((String)vitalsBsUnitField.getSelectedItem());
+						patPres.getVitals().setBsUnit((String) vitalsBsUnitField.getSelectedItem());
+					} else {
+						patPres.getVitals().setBsUnit(null);
 					}
 					if (vitalsTempUnitField.getSelectedIndex() > 0) {
-						patPres.getVitals().setTempUnit((String)vitalsTempUnitField.getSelectedItem());
+						patPres.getVitals().setTempUnit((String) vitalsTempUnitField.getSelectedItem());
+					} else {
+						patPres.getVitals().setTempUnit(null);
+					}
+					// Vitals Bp
+					if (patPres.getVitals().getBp() == null) {
+						patPres.getVitals().setBp(new Bp());
 					}
 					if (StringUtils.hasText(vitalsSystoleField.getText())) {
 						patPres.getVitals().getBp().setSystole(Integer.parseInt(vitalsSystoleField.getText()));
+					} else {
+						patPres.getVitals().getBp().setSystole(null);
 					}
 					if (StringUtils.hasText(vitalsDiastoleField.getText())) {
 						patPres.getVitals().getBp().setDiastole(Integer.parseInt(vitalsDiastoleField.getText()));
+					} else {
+						patPres.getVitals().getBp().setDiastole(null);
 					}
 					// Remaining fields
-					patPres.setReferredTo(referredFromField.getText());
+					patPres.setReferredFrom(referredFromField.getText());
 					patPres.setReferredTo(referredToField.getText());
 					patPres.setPatientAilmentDescription(patientAilmentField.getText());
 					patPres.setDoctorsAilmentDescription(doctorsAilmentField.getText());
@@ -852,7 +876,9 @@ public class PatPresEdit extends JDialog {
 					if (!result)
 						JOptionPane.showMessageDialog(null, MessageBundle.getMessage("angal.patpres.thedatacouldnobesaved"));
 					else {
-						patPres = new PatientPresentation(0, new Patient(), new Vitals(){{ setBp(new Bp());}},
+						patPres = new PatientPresentation(0, new Patient(), new Vitals() {{
+							setBp(new Bp());
+						}},
 							new GregorianCalendar(), null, null,
 							null, null,
 							null, null,
