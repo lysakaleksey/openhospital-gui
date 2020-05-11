@@ -16,21 +16,20 @@ import org.isf.tempunit.model.TempUnit;
 import org.isf.utils.exception.OHServiceException;
 import org.isf.utils.exception.gui.OHServiceExceptionUtil;
 import org.isf.utils.jobjects.CustomJDateChooser;
+import org.isf.utils.jobjects.ModalJFrame;
+import org.isf.utils.jobjects.VoLimitedTextArea;
 import org.isf.utils.jobjects.VoLimitedTextField;
 import org.isf.utils.time.RememberDates;
 import org.springframework.util.StringUtils;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
+import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.GregorianCalendar;
 import java.util.Locale;
 
-public class PatPresEdit extends JDialog {
+public class PatPresEdit extends ModalJFrame {
 	private static final long serialVersionUID = -4271389493861772053L;
 	private static final String VERSION = MessageBundle.getMessage("angal.versione");
 	private boolean insert = false;
@@ -39,8 +38,6 @@ public class PatPresEdit extends JDialog {
 	private JPanel contentPanel = null;
 	private JPanel mainDataPanel = null;
 	private JPanel vitalsDataPanel = null;
-	private JPanel patientDataPanel = null;
-	private JPanel patientSearchPanel = null;
 	private JPanel buttonPanel = null;
 
 	private GregorianCalendar presentDateIn = null;
@@ -48,17 +45,17 @@ public class PatPresEdit extends JDialog {
 	private CustomJDateChooser consultDateCal = null;
 	private CustomJDateChooser previousDateCal = null;
 
-	private JTextField referredFromField;
-	private JTextArea patientAilmentField;
-	private JTextArea doctorsAilmentField;
-	private JTextArea specificSymptomsField;
-	private JTextArea diagnosisField;
-	private JTextArea prognosisField;
-	private JTextArea patientAdviceField;
-	private JTextArea prescribedField;
-	private JTextArea followUpField;
-	private JTextField referredToField;
-	private JTextArea summaryField;
+	private VoLimitedTextField referredFromField;
+	private VoLimitedTextArea patientAilmentField;
+	private VoLimitedTextArea doctorsAilmentField;
+	private VoLimitedTextArea specificSymptomsField;
+	private VoLimitedTextArea diagnosisField;
+	private VoLimitedTextArea prognosisField;
+	private VoLimitedTextArea patientAdviceField;
+	private VoLimitedTextArea prescribedField;
+	private VoLimitedTextArea followUpField;
+	private VoLimitedTextField referredToField;
+	private VoLimitedTextArea summaryField;
 	private JTextField vitalsWeightField;
 	private JTextField vitalsHeightField;
 	private JTextField vitalsBloodSugarField;
@@ -79,25 +76,18 @@ public class PatPresEdit extends JDialog {
 	private JButton cancelButton = null;
 	private JButton jSearchButton = null;
 
+	private ActionListener callback;
 	private ArrayList<Patient> patients = null;
 	private Patient selectedPatient = null;
 	private String lastKey;
 	private String s;
 
-	private static final Integer panelWidth = 800;
-	private static final Integer labelWidth = 50;
-	private static final Integer calendarWidth = 110;
-	private static final Integer dataPanelHeight = 300;
-	private static final Integer dataVitalsHeight = 150;
-	private static final Integer dataPatientHeight = 100;
-	private static final Integer buttonPanelHeight = 40;
-	private static final Integer deltaBetweenLabels = 40;
-
-	public PatPresEdit(JFrame myFrameIn, PatientPresentation patPresIn, boolean action) {
-		super(myFrameIn, true);
+	public PatPresEdit(PatientPresentation patPresIn, boolean action, ActionListener callback) {
+		super();
 		insert = action;
 		patPres = patPresIn;
 		selectedPatient = patPresIn.getPatient();
+		this.callback = callback;
 		initialize();
 	}
 
@@ -117,13 +107,13 @@ public class PatPresEdit extends JDialog {
 		this.getContentPane().setLayout(new BorderLayout(0, 0));
 		this.getContentPane().add(scrollPane, BorderLayout.CENTER);
 		scrollPane.setViewportView(getJContentPane());
-		this.setResizable(true);
 		if (insert) {
 			this.setTitle(MessageBundle.getMessage("angal.patpres.newpatientpresentation") + "(" + VERSION + ")");
 		} else {
 			this.setTitle(MessageBundle.getMessage("angal.patpres.editpatientpresentation") + "(" + VERSION + ")");
 		}
 		this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+		validate();
 		this.setLocationRelativeTo(null);
 	}
 
@@ -137,7 +127,6 @@ public class PatPresEdit extends JDialog {
 			contentPanel = new JPanel();
 			contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
 			contentPanel.add(getPatientSearchPanel(), null);
-			contentPanel.add(getPatientDataPanel(), null);
 			contentPanel.add(getMainDataPanel(), null);
 			contentPanel.add(getVitalsDataPanel(), null);
 			contentPanel.add(getButtonPanel(), null);
@@ -164,7 +153,8 @@ public class PatPresEdit extends JDialog {
 
 			// Referred From
 			JLabel referredFromLabel = new JLabel(MessageBundle.getMessage("angal.patpres.referredfrom"));
-			referredFromField = new JTextField(100);
+			referredFromField = new VoLimitedTextField(100);
+			referredFromField.setColumns(100);
 			referredFromField.setMaximumSize(referredFromField.getPreferredSize());
 			referredFromField.setText(patPres.getReferredFrom());
 			mainDataPanel.add(referredFromLabel, null);
@@ -172,7 +162,8 @@ public class PatPresEdit extends JDialog {
 
 			// Referred to
 			JLabel referredToLabel = new JLabel(MessageBundle.getMessage("angal.patpres.referredto"));
-			referredToField = new JTextField(100);
+			referredToField = new VoLimitedTextField(100);
+			referredToField.setColumns(100);
 			referredToField.setMaximumSize(referredToField.getPreferredSize());
 			referredToField.setText(patPres.getReferredTo());
 			mainDataPanel.add(referredToLabel, null);
@@ -180,72 +171,63 @@ public class PatPresEdit extends JDialog {
 
 			// Patient ailment
 			JLabel patientAilmentLabel = new JLabel(MessageBundle.getMessage("angal.patpres.patientailment"));
-			patientAilmentField = new JTextArea();
-			patientAilmentField.setRows(5);
+			patientAilmentField = new VoLimitedTextArea(65535, 5, 0);
 			patientAilmentField.setText(patPres.getPatientAilmentDescription());
 			mainDataPanel.add(patientAilmentLabel, null);
 			mainDataPanel.add(new JScrollPane(patientAilmentField), null);
 
 			// Doctors ailment
 			JLabel doctorsAilmentLabel = new JLabel(MessageBundle.getMessage("angal.patpres.doctorsailment"));
-			doctorsAilmentField = new JTextArea();
-			doctorsAilmentField.setRows(5);
+			doctorsAilmentField = new VoLimitedTextArea(65535, 5, 0);
 			doctorsAilmentField.setText(patPres.getDoctorsAilmentDescription());
 			mainDataPanel.add(doctorsAilmentLabel, null);
 			mainDataPanel.add(new JScrollPane(doctorsAilmentField), null);
 
 			// Specific symptoms
 			JLabel symptomsLabel = new JLabel(MessageBundle.getMessage("angal.patpres.symptoms"));
-			specificSymptomsField = new JTextArea();
-			specificSymptomsField.setRows(5);
+			specificSymptomsField = new VoLimitedTextArea(65535, 5, 0);
 			specificSymptomsField.setText(patPres.getSpecificSymptoms());
 			mainDataPanel.add(symptomsLabel, null);
 			mainDataPanel.add(new JScrollPane(specificSymptomsField), null);
 
 			// Diagnosis
 			JLabel diagnosisLabel = new JLabel(MessageBundle.getMessage("angal.patpres.diagnosis"));
-			diagnosisField = new JTextArea();
-			diagnosisField.setRows(5);
+			diagnosisField = new VoLimitedTextArea(65535, 5, 0);
 			diagnosisField.setText(patPres.getDiagnosis());
 			mainDataPanel.add(diagnosisLabel, null);
 			mainDataPanel.add(new JScrollPane(diagnosisField), null);
 
 			// Prognosis
 			JLabel prognosisLabel = new JLabel(MessageBundle.getMessage("angal.patpres.prognosis"));
-			prognosisField = new JTextArea();
-			prognosisField.setRows(5);
+			prognosisField = new VoLimitedTextArea(65535, 5, 0);
 			prognosisField.setText(patPres.getPrognosis());
 			mainDataPanel.add(prognosisLabel, null);
 			mainDataPanel.add(new JScrollPane(prognosisField), null);
 
 			// Patient advice
 			JLabel patientAdviceLabel = new JLabel(MessageBundle.getMessage("angal.patpres.patientadvice"));
-			patientAdviceField = new JTextArea();
-			patientAdviceField.setRows(5);
+			patientAdviceField = new VoLimitedTextArea(65535, 5, 0);
 			patientAdviceField.setText(patPres.getPatientAdvice());
 			mainDataPanel.add(patientAdviceLabel, null);
 			mainDataPanel.add(new JScrollPane(patientAdviceField), null);
 
 			// Prescribed
 			JLabel prescribedAdviceLabel = new JLabel(MessageBundle.getMessage("angal.patpres.prescribed"));
-			prescribedField = new JTextArea();
-			prescribedField.setRows(5);
+			prescribedField = new VoLimitedTextArea(65535, 5, 0);
 			prescribedField.setText(patPres.getPrescribed());
 			mainDataPanel.add(prescribedAdviceLabel, null);
 			mainDataPanel.add(new JScrollPane(prescribedField), null);
 
 			// Follow Up
 			JLabel followupLabel = new JLabel(MessageBundle.getMessage("angal.patpres.followup"));
-			followUpField = new JTextArea();
-			followUpField.setRows(5);
+			followUpField = new VoLimitedTextArea(65535, 5, 0);
 			followUpField.setText(patPres.getFollowUp());
 			mainDataPanel.add(followupLabel, null);
 			mainDataPanel.add(new JScrollPane(followUpField), null);
 
 			// Summary
 			JLabel summaryLabel = new JLabel(MessageBundle.getMessage("angal.patpres.summary"));
-			summaryField = new JTextArea();
-			summaryField.setRows(3);
+			summaryField = new VoLimitedTextArea(1000, 3, 0);
 			summaryField.setText(patPres.getSummary());
 			mainDataPanel.add(summaryLabel, null);
 			mainDataPanel.add(new JScrollPane(summaryField), null);
@@ -292,89 +274,122 @@ public class PatPresEdit extends JDialog {
 	 * @return JPanel
 	 */
 	private JPanel getPatientSearchPanel() {
-		if (patientSearchPanel == null) {
-			patientSearchPanel = new JPanel();
-			patientSearchPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
-			patientSearchPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.GRAY), MessageBundle.getMessage("angal.patpres.searchpatient")));
+		JPanel jPanel = new JPanel();
+		jPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
 
-			// patient code label
-			JLabel patientLabel = new JLabel(MessageBundle.getMessage("angal.patpres.patientcode"));
-			patientSearchPanel.add(patientLabel, null);
+		// Patient search panel
+		JPanel patientSearchPanel = new JPanel();
+		patientSearchPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
+		patientSearchPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.GRAY), MessageBundle.getMessage("angal.patpres.searchpatient")));
 
-			// patient code box
-			patientSourceField = new JTextField(5);
-			if (GeneralData.ENHANCEDSEARCH) {
-				patientSourceField.addKeyListener(new KeyListener() {
-					public void keyPressed(KeyEvent e) {
-						int key = e.getKeyCode();
-						if (key == KeyEvent.VK_ENTER) {
-							jSearchButton.doClick();
-						}
+		// patient code label
+		JLabel patientLabel = new JLabel(MessageBundle.getMessage("angal.patpres.patientcode"));
+		patientSearchPanel.add(patientLabel, null);
+
+		// patient code box
+		patientSourceField = new JTextField(5);
+		if (GeneralData.ENHANCEDSEARCH) {
+			patientSourceField.addKeyListener(new KeyListener() {
+				public void keyPressed(KeyEvent e) {
+					int key = e.getKeyCode();
+					if (key == KeyEvent.VK_ENTER) {
+						jSearchButton.doClick();
 					}
-
-					public void keyReleased(KeyEvent e) {
-					}
-
-					public void keyTyped(KeyEvent e) {
-					}
-				});
-			} else {
-				patientSourceField.addKeyListener(new KeyListener() {
-					public void keyTyped(KeyEvent e) {
-						lastKey = "";
-						String s = "" + e.getKeyChar();
-						if (Character.isLetterOrDigit(e.getKeyChar())) {
-							lastKey = s;
-						}
-						s = patientSourceField.getText() + lastKey;
-						s = s.trim();
-						filterPatient(s);
-					}
-
-					public void keyPressed(KeyEvent e) {
-					}
-
-					public void keyReleased(KeyEvent e) {
-					}
-				});
-			}
-			patientSearchPanel.add(patientSourceField, null);
-
-			// patient combo box
-			patientComboBox = new JComboBox();
-			patientComboBox.setMinimumSize(new Dimension(200, 20));
-			patientComboBox.setMinimumSize(new Dimension(patientComboBox.getMaximumSize().width, patientComboBox.getMaximumSize().height));
-			patientComboBox.setMaximumSize(new Dimension(patientComboBox.getMaximumSize().width, patientComboBox.getMaximumSize().height));
-			patientComboBox.addItem(MessageBundle.getMessage("angal.patpres.searchpatient"));
-
-			if (GeneralData.ENHANCEDSEARCH) {
-				if (jSearchButton == null) {
-					jSearchButton = new JButton();
-					jSearchButton.setIcon(new ImageIcon("rsc/icons/zoom_r_button.png"));
-					jSearchButton.setPreferredSize(new Dimension(20, 20));
-					if (!insert) {
-						jSearchButton.setEnabled(false);
-					}
-					jSearchButton.addActionListener(new ActionListener() {
-						public void actionPerformed(ActionEvent e) {
-							patientComboBox.removeAllItems();
-							resetPatPresPat();
-							getPatientComboBox(patientSourceField.getText());
-						}
-					});
 				}
-				patientSearchPanel.add(jSearchButton, null);
-				s = (insert ? "-" : patPres.getPatient().getName());
-			}
-			getPatientComboBox(s);
-			if (!insert) {
-				patientComboBox.setEnabled(false);
-				patientSourceField.setEnabled(false);
-			}
 
-			patientSearchPanel.add(patientComboBox, null);
+				public void keyReleased(KeyEvent e) {
+				}
+
+				public void keyTyped(KeyEvent e) {
+				}
+			});
+		} else {
+			patientSourceField.addKeyListener(new KeyListener() {
+				public void keyTyped(KeyEvent e) {
+					lastKey = "";
+					String s = "" + e.getKeyChar();
+					if (Character.isLetterOrDigit(e.getKeyChar())) {
+						lastKey = s;
+					}
+					s = patientSourceField.getText() + lastKey;
+					s = s.trim();
+					filterPatient(s);
+				}
+
+				public void keyPressed(KeyEvent e) {
+				}
+
+				public void keyReleased(KeyEvent e) {
+				}
+			});
 		}
-		return patientSearchPanel;
+		patientSearchPanel.add(patientSourceField, null);
+
+		// patient combo box
+		patientComboBox = new JComboBox();
+		patientComboBox.setPreferredSize(new Dimension(300, 20));
+		patientComboBox.setMinimumSize(new Dimension(patientComboBox.getPreferredSize().width, patientComboBox.getPreferredSize().height));
+		patientComboBox.setMaximumSize(new Dimension(patientComboBox.getPreferredSize().width, patientComboBox.getPreferredSize().height));
+		patientComboBox.addItem(MessageBundle.getMessage("angal.patpres.searchpatient"));
+
+		if (GeneralData.ENHANCEDSEARCH) {
+			if (jSearchButton == null) {
+				jSearchButton = new JButton();
+				jSearchButton.setIcon(new ImageIcon("rsc/icons/zoom_r_button.png"));
+				jSearchButton.setPreferredSize(new Dimension(20, 20));
+				if (!insert) {
+					jSearchButton.setEnabled(false);
+				}
+				jSearchButton.addActionListener(new ActionListener() {
+					public void actionPerformed(ActionEvent e) {
+						patientComboBox.removeAllItems();
+						resetPatPresPat();
+						getPatientComboBox(patientSourceField.getText());
+					}
+				});
+			}
+			patientSearchPanel.add(jSearchButton, null);
+			s = (insert ? "-" : patPres.getPatient().getName());
+		}
+		getPatientComboBox(s);
+		if (!insert) {
+			patientComboBox.setEnabled(false);
+			patientSourceField.setEnabled(false);
+		}
+		patientSearchPanel.add(patientComboBox, null);
+		jPanel.add(patientSearchPanel, null);
+
+		// Patient data
+		JPanel patientDataPanel = new JPanel();
+		patientDataPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
+		patientDataPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.GRAY), MessageBundle.getMessage("angal.patvac.datapatient")));
+
+		JLabel nameLabel = new JLabel(MessageBundle.getMessage("angal.patvac.name"));
+		patientDataPanel.add(nameLabel, null);
+
+		patTextField = getPatientTextField();
+		patTextField.setEditable(false);
+		patTextField.setColumns(30);
+		patientDataPanel.add(patTextField, null);
+
+		JLabel ageLabel = new JLabel(MessageBundle.getMessage("angal.patvac.age"));
+		patientDataPanel.add(ageLabel, null);
+
+		ageTextField = getAgeTextField();
+		ageTextField.setEditable(false);
+		ageTextField.setColumns(3);
+		patientDataPanel.add(ageTextField, null);
+
+		JLabel sexLabel = new JLabel(MessageBundle.getMessage("angal.patvac.sex"));
+		patientDataPanel.add(sexLabel, null);
+
+		sexTextField = getSexTextField();
+		sexTextField.setEditable(false);
+		sexTextField.setColumns(3);
+		patientDataPanel.add(sexTextField, null);
+
+		jPanel.add(patientDataPanel, null);
+		return jPanel;
 	}
 
 	/**
@@ -641,43 +656,43 @@ public class PatPresEdit extends JDialog {
 		return vitalsDataPanel;
 	}
 
-	/**
-	 * This method initializes dataPatient. This panel contains patient's data
-	 *
-	 * @return dataPatient (JPanel)
-	 */
-	private JPanel getPatientDataPanel() {
-		if (patientDataPanel == null) {
-			patientDataPanel = new JPanel();
-			patientDataPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
-			patientDataPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.GRAY), MessageBundle.getMessage("angal.patvac.datapatient")));
-
-			JLabel nameLabel = new JLabel(MessageBundle.getMessage("angal.patvac.name"));
-			patientDataPanel.add(nameLabel, null);
-
-			patTextField = getPatientTextField();
-			patTextField.setEditable(false);
-			patTextField.setColumns(30);
-			patientDataPanel.add(patTextField, null);
-
-			JLabel ageLabel = new JLabel(MessageBundle.getMessage("angal.patvac.age"));
-			patientDataPanel.add(ageLabel, null);
-
-			ageTextField = getAgeTextField();
-			ageTextField.setEditable(false);
-			ageTextField.setColumns(3);
-			patientDataPanel.add(ageTextField, null);
-
-			JLabel sexLabel = new JLabel(MessageBundle.getMessage("angal.patvac.sex"));
-			patientDataPanel.add(sexLabel, null);
-
-			sexTextField = getSexTextField();
-			sexTextField.setEditable(false);
-			sexTextField.setColumns(3);
-			patientDataPanel.add(sexTextField, null);
-		}
-		return patientDataPanel;
-	}
+//	/**
+//	 * This method initializes dataPatient. This panel contains patient's data
+//	 *
+//	 * @return dataPatient (JPanel)
+//	 */
+//	private JPanel getPatientDataPanel() {
+//		if (patientDataPanel == null) {
+//			patientDataPanel = new JPanel();
+//			patientDataPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
+//			patientDataPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.GRAY), MessageBundle.getMessage("angal.patvac.datapatient")));
+//
+//			JLabel nameLabel = new JLabel(MessageBundle.getMessage("angal.patvac.name"));
+//			patientDataPanel.add(nameLabel, null);
+//
+//			patTextField = getPatientTextField();
+//			patTextField.setEditable(false);
+//			patTextField.setColumns(30);
+//			patientDataPanel.add(patTextField, null);
+//
+//			JLabel ageLabel = new JLabel(MessageBundle.getMessage("angal.patvac.age"));
+//			patientDataPanel.add(ageLabel, null);
+//
+//			ageTextField = getAgeTextField();
+//			ageTextField.setEditable(false);
+//			ageTextField.setColumns(3);
+//			patientDataPanel.add(ageTextField, null);
+//
+//			JLabel sexLabel = new JLabel(MessageBundle.getMessage("angal.patvac.sex"));
+//			patientDataPanel.add(sexLabel, null);
+//
+//			sexTextField = getSexTextField();
+//			sexTextField.setEditable(false);
+//			sexTextField.setColumns(3);
+//			patientDataPanel.add(sexTextField, null);
+//		}
+//		return patientDataPanel;
+//	}
 
 	/**
 	 * This method initializes getPatientTextField about patient name
@@ -740,7 +755,7 @@ public class PatPresEdit extends JDialog {
 	private JPanel getButtonPanel() {
 		if (buttonPanel == null) {
 			buttonPanel = new JPanel();
-			buttonPanel.setBounds(0, dataPanelHeight + dataVitalsHeight + dataPatientHeight, panelWidth, buttonPanelHeight);
+			buttonPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
 			buttonPanel.add(getOkButton(), null);
 			buttonPanel.add(getCancelButton(), null);
 		}
@@ -872,6 +887,8 @@ public class PatPresEdit extends JDialog {
 							result = false;
 						}
 					}
+					if (callback != null)
+						callback.actionPerformed(null);
 
 					if (!result)
 						JOptionPane.showMessageDialog(null, MessageBundle.getMessage("angal.patpres.thedatacouldnobesaved"));

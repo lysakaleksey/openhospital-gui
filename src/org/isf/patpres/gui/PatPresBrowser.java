@@ -141,6 +141,27 @@ public class PatPresBrowser extends ModalJFrame {
 	 */
 	private JButton getButtonNew() {
 		if (buttonNew == null) {
+
+			final ActionListener callback = new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					PatientPresentation last = new PatientPresentation(0, new Patient(), new Vitals() {{ setBp(new Bp());}},
+						null, null, null,
+						null, null,
+						null, null,
+						null, null, null,
+						null, null, null, null
+					);
+
+					if (!last.equals(patientPresentation)) {
+						lPatPres.add(0, patientPresentation);
+						((PatPresBrowser.PatPresBrowsingModel) jTable.getModel()).fireTableDataChanged();
+						updateRowCounter();
+						if (jTable.getRowCount() > 0)
+							jTable.setRowSelectionInterval(0, 0);
+					}
+				}
+			};
+
 			buttonNew = new JButton(MessageBundle.getMessage("angal.common.new"));
 			buttonNew.setMnemonic(KeyEvent.VK_N);
 			buttonNew.addActionListener(new ActionListener() {
@@ -153,21 +174,7 @@ public class PatPresBrowser extends ModalJFrame {
 						null, null, null,
 						null, null, null, null
 					);
-					PatientPresentation last = new PatientPresentation(0, new Patient(), new Vitals() {{ setBp(new Bp());}},
-						null, null, null,
-						null, null,
-						null, null,
-						null, null, null,
-						null, null, null, null
-					);
-					new PatPresEdit(myFrame, patientPresentation, true).setVisible(true);
-					if (!last.equals(patientPresentation)) {
-						lPatPres.add(0, patientPresentation);
-						((PatPresBrowser.PatPresBrowsingModel) jTable.getModel()).fireTableDataChanged();
-						updateRowCounter();
-						if (jTable.getRowCount() > 0)
-							jTable.setRowSelectionInterval(0, 0);
-					}
+					new PatPresEdit(patientPresentation, true, callback).showAsModal(myFrame);
 				}
 			});
 		}
@@ -181,6 +188,7 @@ public class PatPresBrowser extends ModalJFrame {
 	 */
 	private JButton getButtonEdit() {
 		if (buttonEdit == null) {
+
 			buttonEdit = new JButton(MessageBundle.getMessage("angal.common.edit"));
 			buttonEdit.setMnemonic(KeyEvent.VK_S);
 			buttonEdit.addActionListener(new ActionListener() {
@@ -193,21 +201,26 @@ public class PatPresBrowser extends ModalJFrame {
 					}
 
 					selectedrow = jTable.getSelectedRow();
-					patientPresentation = (PatientPresentation) (((PatPresBrowser.PatPresBrowsingModel) model).getValueAt(selectedrow, -1));
+					patientPresentation = (PatientPresentation)model.getValueAt(selectedrow, -1);
 
-					PatientPresentation last = new PatientPresentation(patientPresentation.getCode(), patientPresentation.getPatient(), patientPresentation.getVitals(),
+					final PatientPresentation last = new PatientPresentation(patientPresentation.getCode(), patientPresentation.getPatient(), patientPresentation.getVitals(),
 						patientPresentation.getPresentationDate(), patientPresentation.getConsultationEnd(), patientPresentation.getPresentationDate(),
 						patientPresentation.getReferredFrom(), patientPresentation.getPatientAilmentDescription(), patientPresentation.getDoctorsAilmentDescription(),
 						patientPresentation.getSpecificSymptoms(), patientPresentation.getDiagnosis(), patientPresentation.getPrognosis(), patientPresentation.getPatientAdvice(),
 						patientPresentation.getPrescribed(), patientPresentation.getFollowUp(), patientPresentation.getReferredTo(), patientPresentation.getSummary());
 
-					new PatPresEdit(myFrame, patientPresentation, false).setVisible(true);
-					if (!last.equals(patientPresentation)) {
-						((PatPresBrowser.PatPresBrowsingModel) jTable.getModel()).fireTableDataChanged();
-						updateRowCounter();
-						if ((jTable.getRowCount() > 0) && selectedrow > -1)
-							jTable.setRowSelectionInterval(selectedrow, selectedrow);
-					}
+					final ActionListener callback = new ActionListener() {
+						public void actionPerformed(ActionEvent e) {
+							if (!last.equals(patientPresentation)) {
+								((PatPresBrowser.PatPresBrowsingModel) jTable.getModel()).fireTableDataChanged();
+								updateRowCounter();
+								if ((jTable.getRowCount() > 0) && selectedrow > -1)
+									jTable.setRowSelectionInterval(selectedrow, selectedrow);
+							}
+						}
+					};
+
+					new PatPresEdit(patientPresentation, false, callback).setVisible(true);
 				}
 			});
 		}
@@ -233,7 +246,7 @@ public class PatPresBrowser extends ModalJFrame {
 						return;
 					}
 					selectedrow = jTable.getSelectedRow();
-					patientPresentation = (PatientPresentation) (((PatPresBrowser.PatPresBrowsingModel) model).getValueAt(selectedrow, -1));
+					patientPresentation = (PatientPresentation) model.getValueAt(selectedrow, -1);
 
 //					MessageBundle.getMessage("angal.patpres.deleteselectedpatientvaccinerow") +
 //						"\n" + MessageBundle.getMessage("angal.patpres.vaccinedate") + " = " + dateFormat.format(patientPresentation.getVaccineDate().getTime()) +
@@ -242,22 +255,17 @@ public class PatPresBrowser extends ModalJFrame {
 //						"\n ?",
 
 					String message = MessageBundle.getMessage("angal.patpres.deleteselectedpatientvaccinerow");
-					int n = JOptionPane.showConfirmDialog(null,
-						message,
-						MessageBundle.getMessage("angal.hospital"), JOptionPane.YES_NO_OPTION);
+					int n = JOptionPane.showConfirmDialog(null, message, MessageBundle.getMessage("angal.hospital"), JOptionPane.YES_NO_OPTION);
 
 					if (n == JOptionPane.YES_OPTION) {
-
 						boolean deleted;
-
 						try {
 							deleted = manager.deletePatientPresentation(patientPresentation);
 						} catch (OHServiceException e) {
 							deleted = false;
 							OHServiceExceptionUtil.showMessages(e);
 						}
-
-						if (true == deleted) {
+						if (deleted) {
 							lPatPres.remove(jTable.getSelectedRow());
 							model.fireTableDataChanged();
 							jTable.updateUI();
