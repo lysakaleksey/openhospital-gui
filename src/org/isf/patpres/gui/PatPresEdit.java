@@ -24,13 +24,16 @@ import org.springframework.util.StringUtils;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.util.ArrayList;
 import java.util.GregorianCalendar;
 import java.util.Locale;
 
 public class PatPresEdit extends ModalJFrame {
-	private static final long serialVersionUID = -4271389493861772053L;
+	private static final long serialVersionUID = -4271389493861772055L;
 	private static final String VERSION = MessageBundle.getMessage("angal.versione");
 	private boolean insert = false;
 
@@ -99,14 +102,11 @@ public class PatPresEdit extends ModalJFrame {
 		Dimension screensize = kit.getScreenSize();
 		final int pfrmBase = 20;
 		final int pfrmWidth = 17;
-		final int pfrmHeight = 12;
-		this.setBounds((screensize.width - (int) (screensize.width * 0.75)) / 2, 0,
-			screensize.width * pfrmWidth / pfrmBase + 50, screensize.height);
+		this.setBounds((screensize.width - screensize.width * pfrmWidth / pfrmBase) / 2, 0, screensize.width * pfrmWidth / pfrmBase + 50, screensize.height);
 
 		JScrollPane scrollPane = new JScrollPane();
-		this.getContentPane().setLayout(new BorderLayout(0, 0));
-		this.getContentPane().add(scrollPane, BorderLayout.CENTER);
 		scrollPane.setViewportView(getJContentPane());
+		setContentPane(scrollPane);
 		if (insert) {
 			this.setTitle(MessageBundle.getMessage("angal.patpres.newpatientpresentation") + "(" + VERSION + ")");
 		} else {
@@ -233,6 +233,7 @@ public class PatPresEdit extends ModalJFrame {
 			mainDataPanel.add(new JScrollPane(summaryField), null);
 		}
 
+		//mainDataPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 		return mainDataPanel;
 	}
 
@@ -362,9 +363,9 @@ public class PatPresEdit extends ModalJFrame {
 		// Patient data
 		JPanel patientDataPanel = new JPanel();
 		patientDataPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
-		patientDataPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.GRAY), MessageBundle.getMessage("angal.patvac.datapatient")));
+		patientDataPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.GRAY), MessageBundle.getMessage("angal.patpres.datapatient")));
 
-		JLabel nameLabel = new JLabel(MessageBundle.getMessage("angal.patvac.name"));
+		JLabel nameLabel = new JLabel(MessageBundle.getMessage("angal.patpres.name"));
 		patientDataPanel.add(nameLabel, null);
 
 		patTextField = getPatientTextField();
@@ -372,7 +373,7 @@ public class PatPresEdit extends ModalJFrame {
 		patTextField.setColumns(30);
 		patientDataPanel.add(patTextField, null);
 
-		JLabel ageLabel = new JLabel(MessageBundle.getMessage("angal.patvac.age"));
+		JLabel ageLabel = new JLabel(MessageBundle.getMessage("angal.patpres.age"));
 		patientDataPanel.add(ageLabel, null);
 
 		ageTextField = getAgeTextField();
@@ -380,7 +381,7 @@ public class PatPresEdit extends ModalJFrame {
 		ageTextField.setColumns(3);
 		patientDataPanel.add(ageTextField, null);
 
-		JLabel sexLabel = new JLabel(MessageBundle.getMessage("angal.patvac.sex"));
+		JLabel sexLabel = new JLabel(MessageBundle.getMessage("angal.patpres.sex"));
 		patientDataPanel.add(sexLabel, null);
 
 		sexTextField = getSexTextField();
@@ -446,7 +447,7 @@ public class PatPresEdit extends ModalJFrame {
 		patientComboBox.removeAllItems();
 
 		if (key == null || key.compareTo("") == 0) {
-			patientComboBox.addItem(MessageBundle.getMessage("angal.patvac.selectapatient"));
+			patientComboBox.addItem(MessageBundle.getMessage("angal.patpres.searchpatient"));
 			resetPatPresPat();
 		}
 
@@ -656,44 +657,6 @@ public class PatPresEdit extends ModalJFrame {
 		return vitalsDataPanel;
 	}
 
-//	/**
-//	 * This method initializes dataPatient. This panel contains patient's data
-//	 *
-//	 * @return dataPatient (JPanel)
-//	 */
-//	private JPanel getPatientDataPanel() {
-//		if (patientDataPanel == null) {
-//			patientDataPanel = new JPanel();
-//			patientDataPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
-//			patientDataPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.GRAY), MessageBundle.getMessage("angal.patvac.datapatient")));
-//
-//			JLabel nameLabel = new JLabel(MessageBundle.getMessage("angal.patvac.name"));
-//			patientDataPanel.add(nameLabel, null);
-//
-//			patTextField = getPatientTextField();
-//			patTextField.setEditable(false);
-//			patTextField.setColumns(30);
-//			patientDataPanel.add(patTextField, null);
-//
-//			JLabel ageLabel = new JLabel(MessageBundle.getMessage("angal.patvac.age"));
-//			patientDataPanel.add(ageLabel, null);
-//
-//			ageTextField = getAgeTextField();
-//			ageTextField.setEditable(false);
-//			ageTextField.setColumns(3);
-//			patientDataPanel.add(ageTextField, null);
-//
-//			JLabel sexLabel = new JLabel(MessageBundle.getMessage("angal.patvac.sex"));
-//			patientDataPanel.add(sexLabel, null);
-//
-//			sexTextField = getSexTextField();
-//			sexTextField.setEditable(false);
-//			sexTextField.setColumns(3);
-//			patientDataPanel.add(sexTextField, null);
-//		}
-//		return patientDataPanel;
-//	}
-
 	/**
 	 * This method initializes getPatientTextField about patient name
 	 *
@@ -813,22 +776,58 @@ public class PatPresEdit extends ModalJFrame {
 						patPres.setVitals(new Vitals());
 					}
 					if (StringUtils.hasText(vitalsHeightField.getText())) {
-						patPres.getVitals().setHeight(Float.parseFloat(vitalsHeightField.getText()));
+						float value;
+						try {
+							value = Float.parseFloat(vitalsHeightField.getText());
+						} catch (Exception ignore) {
+							JOptionPane.showMessageDialog(null, MessageBundle.getMessage("angal.patpres.invalidvalue"));
+							vitalsHeightField.setText(null);
+							vitalsHeightField.grabFocus();
+							return;
+						}
+						patPres.getVitals().setHeight(value);
 					} else {
 						patPres.getVitals().setHeight(null);
 					}
 					if (StringUtils.hasText(vitalsWeightField.getText())) {
-						patPres.getVitals().setWeight(Float.parseFloat(vitalsWeightField.getText()));
+						float value;
+						try {
+							value = Float.parseFloat(vitalsWeightField.getText());
+						} catch (Exception ignore) {
+							JOptionPane.showMessageDialog(null, MessageBundle.getMessage("angal.patpres.invalidvalue"));
+							vitalsWeightField.setText(null);
+							vitalsWeightField.grabFocus();
+							return;
+						}
+						patPres.getVitals().setWeight(value);
 					} else {
 						patPres.getVitals().setWeight(null);
 					}
 					if (StringUtils.hasText(vitalsBloodSugarField.getText())) {
-						patPres.getVitals().setBloodSugar(Float.parseFloat(vitalsBloodSugarField.getText()));
+						float value;
+						try {
+							value = Float.parseFloat(vitalsBloodSugarField.getText());
+						} catch (Exception ignore) {
+							JOptionPane.showMessageDialog(null, MessageBundle.getMessage("angal.patpres.invalidvalue"));
+							vitalsBloodSugarField.setText(null);
+							vitalsBloodSugarField.grabFocus();
+							return;
+						}
+						patPres.getVitals().setBloodSugar(value);
 					} else {
 						patPres.getVitals().setBloodSugar(null);
 					}
 					if (StringUtils.hasText(vitalsTemperatureField.getText())) {
-						patPres.getVitals().setTemperature(Float.parseFloat(vitalsTemperatureField.getText()));
+						float value;
+						try {
+							value = Float.parseFloat(vitalsTemperatureField.getText());
+						} catch (Exception ignore) {
+							JOptionPane.showMessageDialog(null, MessageBundle.getMessage("angal.patpres.invalidvalue"));
+							vitalsTemperatureField.setText(null);
+							vitalsTemperatureField.grabFocus();
+							return;
+						}
+						patPres.getVitals().setTemperature(value);
 					} else {
 						patPres.getVitals().setTemperature(null);
 					}
@@ -847,12 +846,30 @@ public class PatPresEdit extends ModalJFrame {
 						patPres.getVitals().setBp(new Bp());
 					}
 					if (StringUtils.hasText(vitalsSystoleField.getText())) {
-						patPres.getVitals().getBp().setSystole(Integer.parseInt(vitalsSystoleField.getText()));
+						int value;
+						try {
+							value = Integer.parseInt(vitalsSystoleField.getText());
+						} catch (Exception ignore) {
+							JOptionPane.showMessageDialog(null, MessageBundle.getMessage("angal.patpres.invalidvalue"));
+							vitalsSystoleField.setText(null);
+							vitalsSystoleField.grabFocus();
+							return;
+						}
+						patPres.getVitals().getBp().setSystole(value);
 					} else {
 						patPres.getVitals().getBp().setSystole(null);
 					}
 					if (StringUtils.hasText(vitalsDiastoleField.getText())) {
-						patPres.getVitals().getBp().setDiastole(Integer.parseInt(vitalsDiastoleField.getText()));
+						int value;
+						try {
+							value = Integer.parseInt(vitalsDiastoleField.getText());
+						} catch (Exception ignore) {
+							JOptionPane.showMessageDialog(null, MessageBundle.getMessage("angal.patpres.invalidvalue"));
+							vitalsDiastoleField.setText(null);
+							vitalsDiastoleField.grabFocus();
+							return;
+						}
+						patPres.getVitals().getBp().setDiastole(value);
 					} else {
 						patPres.getVitals().getBp().setDiastole(null);
 					}
