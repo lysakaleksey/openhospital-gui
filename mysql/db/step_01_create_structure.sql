@@ -31,7 +31,7 @@ CREATE TABLE ADMISSION  (
 	ADM_WRD_ID_A  char(1) NOT NULL default '',
 	ADM_YPROG  int NOT NULL default '0',
 	ADM_PAT_ID  int NOT NULL default '0',
-	ADM_DATE_ADM  datetime NOT NULL default '0000-00-00 00:00:00',
+	ADM_DATE_ADM datetime NOT NULL,
 	ADM_ADMT_ID_A_ADM  varchar(10) NOT NULL default '',
 	ADM_FHU  varchar(50) default NULL,
 	ADM_IN_DIS_ID_A  varchar(10) default NULL,
@@ -394,3 +394,27 @@ CREATE TABLE MENUITEM (
   	MNI_POSITION int(10) unsigned NOT NULL default '0',
   	PRIMARY KEY  (MNI_ID_A)
 ) ENGINE=MyISAM;
+
+CREATE TABLE BSUNIT
+(
+    BSU_ID_A               varchar(10)          not null,
+    BSU_DESC               varchar(50)          not null,
+    BSU_CREATED_BY         varchar(50)          null,
+    BSU_CREATED_DATE       datetime             null,
+    BSU_LAST_MODIFIED_BY   varchar(50)          null,
+    BSU_LAST_MODIFIED_DATE datetime             null,
+    BSU_ACTIVE             tinyint(1) default 1 not null,
+    PRIMARY KEY (BSU_ID_A)
+) ENGINE = MyISAM;
+
+CREATE TABLE TEMPUNIT
+(
+    TPU_ID_A               varchar(2)           not null,
+    TPU_DESC               varchar(50)          not null,
+    TPU_CREATED_BY         varchar(50)          null,
+    TPU_CREATED_DATE       datetime             null,
+    TPU_LAST_MODIFIED_BY   varchar(50)          null,
+    TPU_LAST_MODIFIED_DATE datetime             null,
+    TPU_ACTIVE             tinyint(1) default 1 not null,
+    PRIMARY KEY (TPU_ID_A)
+) ENGINE = MyISAM;
