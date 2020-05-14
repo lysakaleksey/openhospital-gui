@@ -247,14 +247,7 @@ public class PatPresBrowser extends ModalJFrame {
 					}
 					selectedrow = jTable.getSelectedRow();
 					patientPresentation = (PatientPresentation) model.getValueAt(selectedrow, -1);
-
-//					MessageBundle.getMessage("angal.patpres.deleteselectedpatientvaccinerow") +
-//						"\n" + MessageBundle.getMessage("angal.patpres.vaccinedate") + " = " + dateFormat.format(patientPresentation.getVaccineDate().getTime()) +
-//						"\n " + MessageBundle.getMessage("angal.patpres.vaccine") + " = " + patientPresentation.getVaccine().getDescription() +
-//						"\n " + MessageBundle.getMessage("angal.patpres.patient") + " =" + patientPresentation.getPatName() +
-//						"\n ?",
-
-					String message = MessageBundle.getMessage("angal.patpres.deleteselectedpatientvaccinerow");
+					String message = MessageBundle.getMessage("angal.patpres.deleteselectedpatpresrow");
 					int n = JOptionPane.showConfirmDialog(null, message, MessageBundle.getMessage("angal.hospital"), JOptionPane.YES_NO_OPTION);
 
 					if (n == JOptionPane.YES_OPTION) {
