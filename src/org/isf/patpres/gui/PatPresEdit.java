@@ -775,20 +775,6 @@ public class PatPresEdit extends ModalJFrame {
 					if (patPres.getVitals() == null) {
 						patPres.setVitals(new Vitals());
 					}
-					if (StringUtils.hasText(vitalsHeightField.getText())) {
-						float value;
-						try {
-							value = Float.parseFloat(vitalsHeightField.getText());
-						} catch (Exception ignore) {
-							JOptionPane.showMessageDialog(null, MessageBundle.getMessage("angal.patpres.invalidvalue"));
-							vitalsHeightField.setText(null);
-							vitalsHeightField.grabFocus();
-							return;
-						}
-						patPres.getVitals().setHeight(value);
-					} else {
-						patPres.getVitals().setHeight(null);
-					}
 					if (StringUtils.hasText(vitalsWeightField.getText())) {
 						float value;
 						try {
@@ -802,6 +788,20 @@ public class PatPresEdit extends ModalJFrame {
 						patPres.getVitals().setWeight(value);
 					} else {
 						patPres.getVitals().setWeight(null);
+					}
+					if (StringUtils.hasText(vitalsHeightField.getText())) {
+						float value;
+						try {
+							value = Float.parseFloat(vitalsHeightField.getText());
+						} catch (Exception ignore) {
+							JOptionPane.showMessageDialog(null, MessageBundle.getMessage("angal.patpres.invalidvalue"));
+							vitalsHeightField.setText(null);
+							vitalsHeightField.grabFocus();
+							return;
+						}
+						patPres.getVitals().setHeight(value);
+					} else {
+						patPres.getVitals().setHeight(null);
 					}
 					if (StringUtils.hasText(vitalsBloodSugarField.getText())) {
 						float value;
