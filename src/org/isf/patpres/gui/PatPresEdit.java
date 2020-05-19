@@ -29,6 +29,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Locale;
 
@@ -403,7 +404,8 @@ public class PatPresEdit extends ModalJFrame {
 		if (insert) {
 			presentDateIn = RememberDates.getLastPatientPresentationDate();
 		} else {
-			presentDateIn = patPres.getPresentationDate();
+			presentDateIn = new GregorianCalendar();
+			presentDateIn.setTime(patPres.getPresentationDate());
 		}
 		if (presentDateIn != null) {
 			myDate = presentDateIn.getTime();
@@ -420,7 +422,7 @@ public class PatPresEdit extends ModalJFrame {
 	private CustomJDateChooser getConsultationEndDateFieldCal() {
 		java.util.Date myDate = null;
 		if (patPres.getConsultationEnd() != null) {
-			myDate = patPres.getConsultationEnd().getTime();
+			myDate = patPres.getConsultationEnd();
 		}
 		return (new CustomJDateChooser(myDate, "dd/MM/yy"));
 	}
@@ -433,7 +435,7 @@ public class PatPresEdit extends ModalJFrame {
 	private CustomJDateChooser getPreviousDateCalFieldCal() {
 		java.util.Date myDate = null;
 		if (patPres.getPreviousConsult() != null) {
-			myDate = patPres.getPreviousConsult().getTime();
+			myDate = patPres.getPreviousConsult();
 		}
 		return (new CustomJDateChooser(myDate, "dd/MM/yy"));
 	}
@@ -751,23 +753,17 @@ public class PatPresEdit extends ModalJFrame {
 
 					patPres.setPatient(selectedPatient);
 					if (presentDateCal.getDate() != null) {
-						GregorianCalendar gregDate = new GregorianCalendar();
-						gregDate.setTime(presentDateCal.getDate());
-						patPres.setPresentationDate(gregDate);
+						patPres.setPresentationDate(presentDateCal.getDate());
 					} else {
 						patPres.setPresentationDate(null);
 					}
 					if (consultDateCal.getDate() != null) {
-						GregorianCalendar gregDate = new GregorianCalendar();
-						gregDate.setTime(consultDateCal.getDate());
-						patPres.setConsultationEnd(gregDate);
+						patPres.setConsultationEnd(consultDateCal.getDate());
 					} else {
 						patPres.setConsultationEnd(null);
 					}
 					if (previousDateCal.getDate() != null) {
-						GregorianCalendar gregDate = new GregorianCalendar();
-						gregDate.setTime(previousDateCal.getDate());
-						patPres.setPreviousConsult(gregDate);
+						patPres.setPreviousConsult(previousDateCal.getDate());
 					} else {
 						patPres.setPreviousConsult(null);
 					}
@@ -913,7 +909,7 @@ public class PatPresEdit extends ModalJFrame {
 						patPres = new PatientPresentation(0, new Patient(), new Vitals() {{
 							setBp(new Bp());
 						}},
-							new GregorianCalendar(), null, null,
+							new Date(), null, null,
 							null, null,
 							null, null,
 							null, null, null,
