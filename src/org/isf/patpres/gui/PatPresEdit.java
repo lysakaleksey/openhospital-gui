@@ -131,6 +131,10 @@ public class PatPresEdit extends ModalJFrame {
 			contentPanel.add(getMainDataPanel(), null);
 			contentPanel.add(getVitalsDataPanel(), null);
 			contentPanel.add(getButtonPanel(), null);
+			contentPanel.add(new JPanel());
+			contentPanel.add(new JPanel());
+			contentPanel.add(new JPanel());
+			contentPanel.add(new JPanel());
 		}
 		return contentPanel;
 	}
@@ -906,7 +910,7 @@ public class PatPresEdit extends ModalJFrame {
 					if (!result)
 						JOptionPane.showMessageDialog(null, MessageBundle.getMessage("angal.patpres.thedatacouldnobesaved"));
 					else {
-						patPres = new PatientPresentation(0, new Patient(), new Vitals() {{
+						patPres = new PatientPresentation(0, new Patient() {{ setCode(0);}}, new Vitals() {{
 							setBp(new Bp());
 						}},
 							new Date(), null, null,

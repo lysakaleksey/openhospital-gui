@@ -144,7 +144,7 @@ public class PatPresBrowser extends ModalJFrame {
 
 			final ActionListener callback = new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
-					PatientPresentation last = new PatientPresentation(0, new Patient(), new Vitals() {{ setBp(new Bp());}},
+					PatientPresentation last = new PatientPresentation(0, new Patient() {{ setCode(0);}}, new Vitals() {{ setBp(new Bp());}},
 						null, null, null,
 						null, null,
 						null, null,
@@ -167,7 +167,7 @@ public class PatPresBrowser extends ModalJFrame {
 			buttonNew.addActionListener(new ActionListener() {
 
 				public void actionPerformed(ActionEvent event) {
-					patientPresentation = new PatientPresentation(0, new Patient(), new Vitals() {{ setBp(new Bp());}},
+					patientPresentation = new PatientPresentation(0, new Patient() {{ setCode(0);}}, new Vitals() {{ setBp(new Bp());}},
 						null, null, null,
 						null, null,
 						null, null,
